@@ -28,9 +28,9 @@ app.get('/', (req, res) => {
 //mongo db connection
 const MongoClient = require('mongodb').MongoClient;
 const uri = `mongodb+srv://${dbUser}:${dbPass}@cluster0.lroqv.mongodb.net/emaJohnStore?retryWrites=true&w=majority`;
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, connectTimeoutMS: 30000, keepAlive: 1 });
 client.connect(err => {
-    const products = client.db("emaJohnStore").collection("products");
+    const productsCollection = client.db("emaJohnStore").collection("products");
     // perform actions on the collection object
     console.log("DB Connected");
 
@@ -39,11 +39,44 @@ client.connect(err => {
     //post one product 
     app.post('/addProduct', (req, res) => {
         const product = req.body;
-        products.insertOne(product)
+        console.log(product);
+        productsCollection.insertOne(product)
             .then((result) => {
                 console.log(result);
             })
     })
+    //post many products at a time 
+    app.post('/addProducts', (req, res) => {
+        const allproducts = req.body;
+        //console.log(products);
+        productsCollection.insertMany(allproducts)
+            .then((result) => {
+                console.log(result);
+                res.send(result.insertedCount);
+            })
+    })
+    //get all products from database
+    app.get('/products', (req, res) => {
+
+        productsCollection.find({}).toArray((err, docs) => {
+            console.log({err});
+            res.send(docs);
+
+        })
+
+    })
+    //get single product with key database
+    app.get('/product/:key', (req, res) => {
+
+        const pdkey = req.params.key; 
+        productsCollection.find({key:pdkey}).toArray((err, docs) => {
+            console.log({err});
+            res.send(docs);
+
+        })
+
+    })
+
 
     //client.close();  
 });

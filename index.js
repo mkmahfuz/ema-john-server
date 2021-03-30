@@ -31,6 +31,8 @@ const uri = `mongodb+srv://${dbUser}:${dbPass}@cluster0.lroqv.mongodb.net/emaJoh
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, connectTimeoutMS: 30000, keepAlive: 1 });
 client.connect(err => {
     const productsCollection = client.db("emaJohnStore").collection("products");
+    const ordersCollection = client.db("emaJohnStore").collection("orders"); // add this code from mod-48-7
+
     // perform actions on the collection object
     console.log("DB Connected");
 
@@ -45,6 +47,22 @@ client.connect(err => {
                 console.log(result);
             })
     })
+
+    //post one order
+    app.post('/addOrder', (req, res) => {
+        const order = req.body;
+        console.log(order);
+        ordersCollection.insertOne(order)
+            .then((result) => {
+                // console.log(result);
+                res.send(result.insertedCount>0);
+            })
+    })
+
+
+
+
+
     //post many products at a time 
     app.post('/addProducts', (req, res) => {
         const allproducts = req.body;
@@ -59,7 +77,7 @@ client.connect(err => {
     app.get('/products', (req, res) => {
 
         productsCollection.find({}).toArray((err, docs) => {
-            console.log({err});
+            console.log({ err });
             res.send(docs);
 
         })
@@ -68,13 +86,21 @@ client.connect(err => {
     //get single product with key database
     app.get('/product/:key', (req, res) => {
 
-        const pdkey = req.params.key; 
-        productsCollection.find({key:pdkey}).toArray((err, docs) => {
-            console.log({err});
+        const pdkey = req.params.key;
+        productsCollection.find({ key: pdkey }).toArray((err, docs) => {
+            console.log({ err });
             res.send(docs);
 
         })
 
+    })
+
+    //get some products from db
+    app.post('/productsByKeys', (req, res) => {
+        const productKeys = req.body;
+        console.log(productKeys);
+        productsCollection.find({ key: { $in: productKeys } })
+            .toArray((err, docs) => { res.send(docs) })
     })
 
 
